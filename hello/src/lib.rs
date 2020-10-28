@@ -1,6 +1,9 @@
 
 use ::libc;
 use std::ptr;
+use std::slice;
+use std::ffi::CStr;
+use std::str::from_utf8;
 
 pub type TclCmdProc = extern "C" fn (cd:*mut libc::c_void, interp:*mut libc::c_void,
                                       argc: ::libc::c_int, argv: *mut *const ::libc::c_char) -> ::libc::c_int;
@@ -34,8 +37,14 @@ pub extern fn Foo_Init(interp: *mut libc::c_void) -> ::libc::c_int {
 Function that will get called by the Tcl interpreter whenever mycmd is invoked
 */
 extern "C" fn my_command(_:*mut libc::c_void, _interp: *mut libc::c_void,
-                        _argc: ::libc::c_int, _argv: *mut *const ::libc::c_char) -> ::libc::c_int {
-    println!("rust from tcl");
+                        argc: ::libc::c_int, argv: *mut *const ::libc::c_char) -> ::libc::c_int {
+    println!("Rust from TCL");
+    // Print parameters.
+    let args = unsafe { slice::from_raw_parts(argv, argc as usize) };
+    for n in 1..(argc as usize) {
+    	let arg = unsafe { from_utf8(CStr::from_ptr(args[n]).to_bytes()).unwrap() };
+	println!("  {}", arg);
+    }
     
     0 // This tells Tcl everything ended OK
 }
